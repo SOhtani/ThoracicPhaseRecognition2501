@@ -55,7 +55,7 @@ def get_taigai_flg_for_frames(taigai_frame_list):
     not_taigai = 0
     taigai = 1
     taigai_flg_for_frames = []
-    for i, taigai_start, taigai_end in enumerate(taigai_frame_list):
+    for i, (taigai_start, taigai_end) in enumerate(taigai_frame_list):
         if i == 0:
             not_taigai_frame_num = taigai_start
         else:
@@ -63,7 +63,7 @@ def get_taigai_flg_for_frames(taigai_frame_list):
         taigai_flg_for_frames += [not_taigai] * not_taigai_frame_num
         taigai_flg_for_frames += [taigai] * (taigai_end - taigai_start)
         bfr_end = taigai_end
-    assert len(taigai_flg_for_frames) == (taigai_frame_list[-1][1] - 1)
+    assert len(taigai_flg_for_frames) == taigai_frame_list[-1][1]
     return taigai_flg_for_frames
 
 
@@ -72,6 +72,8 @@ def get_not_taigai_step_frame(taigai_flg_for_frames, taigai_step_frame):
     taigai = 1
     taigai_frame_num = taigai_flg_for_frames.count(taigai)
     not_taigai_frame_num = taigai_flg_for_frames.count(not_taigai)
+    print("taigai_frame_num", taigai_frame_num)
+    print("not_taigai_frame_num", not_taigai_frame_num)
     not_taigai_step_frame = taigai_step_frame * not_taigai_frame_num / taigai_frame_num
     return not_taigai_step_frame
 
@@ -79,9 +81,9 @@ def get_not_taigai_step_frame(taigai_flg_for_frames, taigai_step_frame):
 def extract_workflow(excel_p, sheet_index, video_root, save_root, upsampling=False):
     save_dir = save_root / f"{excel_p.stem}"
     video_p = video_root / f"{excel_p.stem}.m2ts"
-    if not video_p.exist():
+    if not video_p.exists():
         video_p = video_root / f"{excel_p.stem}.mov"
-    
+
     video = cv2.VideoCapture(str(video_p))
     fps = int(video.get(cv2.CAP_PROP_FPS))
 
@@ -92,7 +94,7 @@ def extract_workflow(excel_p, sheet_index, video_root, save_root, upsampling=Fal
     taigai_flg_for_frames = get_taigai_flg_for_frames(taigai_frame_list)
     not_taigai_step_frame = get_not_taigai_step_frame(taigai_flg_for_frames, taigai_step_frame)
 
-    for frame_i, taigai_flg in tqdm(enumerate(taigai_frame_list), total=len(taigai_frame_list)):
+    for frame_i, taigai_flg in tqdm(enumerate(taigai_flg_for_frames), total=len(taigai_frame_list)):
         ret, frame = video.read()
         if not ret:
             break
@@ -100,7 +102,7 @@ def extract_workflow(excel_p, sheet_index, video_root, save_root, upsampling=Fal
         step_frame = taigai_step_frame if taigai_flg else not_taigai_step_frame
 
         if frame_i % step_frame == 0:
-            frame_p = save_dir / str(taigai_flg) / f"frame_{frame_cnt:06}.png"
+            frame_p = save_dir / str(taigai_flg) / f"frame_{frame_i:06}.png"
             frame_p.parent.mkdir(parents=True, exist_ok=True)
             cv2.imwrite(str(frame_p), frame)
 
