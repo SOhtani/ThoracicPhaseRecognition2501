@@ -12,16 +12,16 @@ def read_excel(excel_p):
     return df
 
 
-def get_phase_list(df, fps):
+def get_phase_list(df, ignore_phase_ids=[], phase_index=0, time_index=5):
     phase_list = []
-    phase_index = 0
-    time_index = 5
     for i, row in df.iterrows():
         row_list = row.values.tolist()
-        _phase = row_list[phase_index]
-        _end_time = row_list[time_index]
-        _end_sec = time_to_seconds(_end_time)
-        phase_list.append([_phase, _end_sec])
+        _phase = str(int(row_list[phase_index]))
+        # _end_time = row_list[time_index]
+        # _end_sec = time_to_seconds(_end_time)
+        _end_sec = int(row_list[time_index])
+        if _phase not in ignore_phase_ids:
+            phase_list.append([_phase, _end_sec])
     return phase_list
 
 
@@ -73,14 +73,26 @@ def get_each_phase_step_frame(phase_list, base_step_frame):
     return each_phase_step_frame
 
 
-def extract_workflow(excel_p, video_root, save_root, upsampling=False):
+def extract_workflow(
+        excel_p,
+        video_root,
+        ignore_phase_ids,
+        phase_index,
+        time_index,
+        save_root,
+        upsampling=False
+    ):
     save_dir = save_root / f"{excel_p.stem}"
     video_p = video_root / f"{excel_p.stem}.m2ts"
     video = cv2.VideoCapture(str(video_p))
     fps = video.get(cv2.CAP_PROP_FPS)
 
     df = read_excel(excel_p)
-    phase_list = get_phase_list(df, fps)
+    phase_list = get_phase_list(
+        df, 
+        ignore_phase_ids,
+        phase_index,
+        time_index,)
 
     finish_frame_num = int(int(phase_list[-1][1]) * fps)
     step_frame = 60
@@ -105,10 +117,16 @@ def extract_workflow(excel_p, video_root, save_root, upsampling=False):
 
 
 def main():
-    excel_dir = Path("/mnt/cloudy_N/Thoracic/input/original")
-    video_root = Path("/mnt/cloudy_N/Thoracic/input/original")
-    save_root = Path("/mnt/cloudy_N/Thoracic/input/images/upsampling")
+    # excel_dir = Path("/mnt/cloudy_N/Thoracic/input/original")
+    # video_root = Path("/mnt/cloudy_N/Thoracic/input/original")
+    # save_root = Path("/mnt/cloudy_N/Thoracic/input/images/upsampling")
+    excel_dir = Path("/mnt/data1/Thoracic/input/original")
+    video_root = Path("/mnt/data1/Thoracic/input/original")
+    save_root = Path("/mnt/data1/Thoracic/input/upsampling")
     upsampling = True
+    ignore_phase_ids = ["6"]
+    phase_index = 0
+    time_index = 1
 
     with ProcessPoolExecutor(max_workers=5) as executor:
         for excel_p in excel_dir.glob("W00*.xlsx"):
@@ -117,6 +135,9 @@ def main():
                 extract_workflow,
                 excel_p,
                 video_root,
+                ignore_phase_ids,
+                phase_index,
+                time_index,
                 save_root,
                 upsampling)
 

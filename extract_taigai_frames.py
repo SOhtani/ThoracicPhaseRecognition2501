@@ -23,7 +23,7 @@ def get_taigai_frame_list(df, fps):
         _taigai_stop = row_list[taigai_stop_index]
         _taigai_start_sec = time_to_seconds(_taigai_start)
         _taigai_stop_sec = time_to_seconds(_taigai_stop)
-        taigai_frame_list.append([_taigai_start_sec * fps, _taigai_stop_sec * fps])
+        taigai_frame_list.append([int(_taigai_start_sec * fps), int(_taigai_stop_sec * fps)])
     return taigai_frame_list
 
 
@@ -74,7 +74,7 @@ def get_not_taigai_step_frame(taigai_flg_for_frames, taigai_step_frame):
     not_taigai_frame_num = taigai_flg_for_frames.count(not_taigai)
     print("taigai_frame_num", taigai_frame_num)
     print("not_taigai_frame_num", not_taigai_frame_num)
-    not_taigai_step_frame = taigai_step_frame * not_taigai_frame_num / taigai_frame_num
+    not_taigai_step_frame = int(taigai_step_frame * not_taigai_frame_num / taigai_frame_num)
     return not_taigai_step_frame
 
 
@@ -85,16 +85,18 @@ def extract_workflow(excel_p, sheet_index, video_root, save_root, upsampling=Fal
         video_p = video_root / f"{excel_p.stem}.mov"
 
     video = cv2.VideoCapture(str(video_p))
-    fps = int(video.get(cv2.CAP_PROP_FPS))
+    fps = video.get(cv2.CAP_PROP_FPS)
 
     df = read_excel(excel_p, sheet_index)
+    print(df)
+    return
     taigai_frame_list = get_taigai_frame_list(df, fps)
-
-    taigai_step_frame = fps
     taigai_flg_for_frames = get_taigai_flg_for_frames(taigai_frame_list)
+
+    taigai_step_frame = int(fps)
     not_taigai_step_frame = get_not_taigai_step_frame(taigai_flg_for_frames, taigai_step_frame)
 
-    for frame_i, taigai_flg in tqdm(enumerate(taigai_flg_for_frames), total=len(taigai_frame_list)):
+    for frame_i, taigai_flg in tqdm(enumerate(taigai_flg_for_frames), total=len(taigai_flg_for_frames)):
         ret, frame = video.read()
         if not ret:
             break
@@ -102,7 +104,7 @@ def extract_workflow(excel_p, sheet_index, video_root, save_root, upsampling=Fal
         step_frame = taigai_step_frame if taigai_flg else not_taigai_step_frame
 
         if frame_i % step_frame == 0:
-            frame_p = save_dir / str(taigai_flg) / f"frame_{frame_i:06}.png"
+            frame_p = save_dir / str(taigai_flg) / f"frame_{frame_i:09}.png"
             frame_p.parent.mkdir(parents=True, exist_ok=True)
             cv2.imwrite(str(frame_p), frame)
 
