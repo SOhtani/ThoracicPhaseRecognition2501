@@ -15,12 +15,12 @@ def save_annotation_txt(classes, path_list, label_list, save_p):
 
 
 if __name__ == "__main__":
-    image_root = Path("/mnt/data1/input/Thoracic/images/upsampling_exclude_taigai/not_taigai")
-    save_dir = Path("/mnt/cloudy_z/src/yishikawa/input/text/Thoracic/upsampling_exclude_taigai/not_taigai/k_fold")
+    image_root = Path("/mnt/data1/input/Thoracic/1_frame_per_sec")
+    save_dir = Path("/mnt/data1/input/Thoracic/k_fold/1_frame_per_sec")
     save_dir.mkdir(parents=True, exist_ok=True)
-    data_prefix = "/mnt/data1/input/Thoracic/images/upsampling_exclude_taigai/not_taigai/"
+    data_prefix = "/mnt/data1/input/Thoracic/1_frame_per_sec/"
 
-    classes = ['1', '2', '3', '4', '5', '6']
+    classes = ['1', '2', '3', '4', '5', 'x']
 
     image_paths = np.array([str(p).replace(data_prefix, "") for p in image_root.glob("**/*.png")])
     labels = np.array([Path(p).parent.name for p in image_paths])

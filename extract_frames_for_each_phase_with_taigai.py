@@ -185,10 +185,10 @@ def main():
     # excel_dir = Path("/mnt/cloudy_N/Thoracic/input/original")
     # video_root = Path("/mnt/cloudy_N/Thoracic/input/original")
     # save_root = Path("/mnt/cloudy_N/Thoracic/input/images/upsampling")
-    excel_dir = Path("/mnt/data1/Thoracic/input/original")
-    video_root = Path("/mnt/data1/Thoracic/input/original")
-    save_root = Path("/mnt/data1/Thoracic/input/upsampling")
-    upsampling = True
+    excel_dir = Path("/mnt/data1/input/Thoracic/original/trial_dataset")
+    video_root = Path("/mnt/data1/input/Thoracic/original/trial_dataset")
+    save_root = Path("/mnt/data1/input/Thoracic/1_frame_per_sec")
+    upsampling = False
     ignore_phase_ids = ["6"]
     phase_index = 0
     time_index = 1
