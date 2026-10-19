@@ -89,6 +89,19 @@ def extract_workflow(excel_p, sheet_index, video_root, save_root, upsampling=Fal
 
     df = read_excel(excel_p, sheet_index)
     print(df)
+    # NOTE (2026-10-19): early return — the code below has never been exercised
+    # end-to-end against real data in this state and is left disabled rather
+    # than silently enabled. Before removing this `return`, verify at minimum:
+    #   - get_not_taigai_step_frame() divides by taigai_frame_num /
+    #     not_taigai_frame_num; a case with zero taigai (or zero non-taigai)
+    #     segments will raise ZeroDivisionError.
+    #   - time_to_seconds() assumes a specific Excel cell string format; an
+    #     unexpected format raises ValueError with no case-level context.
+    #   - main() below never calls .result() on the submitted Future objects,
+    #     so an exception raised here would currently be silently swallowed
+    #     by ProcessPoolExecutor (see fix in main()).
+    #   - Validate against a small number of real cases (frame numbers, taigai
+    #     labels, saved image counts) before trusting the output.
     return
     taigai_frame_list = get_taigai_frame_list(df, fps)
     taigai_flg_for_frames = get_taigai_flg_for_frames(taigai_frame_list)
@@ -119,15 +132,33 @@ def main():
     sheet_index = 1
 
     with ProcessPoolExecutor(max_workers=5) as executor:
+        futures = {}
         for excel_p in excel_dir.glob("W0*.xlsx"):
             print(excel_p)
-            executor.submit(
+            future = executor.submit(
                 extract_workflow,
                 excel_p,
                 sheet_index,
                 video_root,
                 save_root,
                 upsampling)
+            futures[future] = excel_p
+
+        # NOTE (2026-10-19): without calling .result(), an exception raised
+        # inside extract_workflow() for a given case is silently discarded by
+        # ProcessPoolExecutor and the run looks like it "succeeded" with no
+        # indication that case was never processed. Collect and report
+        # failures explicitly instead.
+        failed = []
+        for future, excel_p in futures.items():
+            try:
+                future.result()
+            except Exception as e:
+                print(f"[ERROR] {excel_p.name} failed: {e!r}")
+                failed.append((excel_p, e))
+        if failed:
+            print(f"[ERROR] {len(failed)} case(s) failed: "
+                  f"{[p.name for p, _ in failed]}")
 
 
 if __name__ == "__main__":
