@@ -1,3 +1,6 @@
+# NOTE: this is a dummy/debug script used to check argument parsing and
+# case-list resolution. It does not process any case or image — see main.py
+# for the actual outside-body exclusion processing.
 import argparse
 import time
 
